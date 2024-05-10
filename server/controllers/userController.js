@@ -2,7 +2,8 @@ const validator = require('validator')
 const userModel = require("../models/userModel");
 const cookieParser = require('cookie-parser')
 const cloudinary = require('cloudinary')
-const {getDataUri} = require("../utils/features.js")
+const { getDataUri } = require('../utils/features')
+const jwt = require('jsonwebtoken')
 const dotenv = require('dotenv')
 dotenv.config()
 
@@ -75,7 +76,7 @@ const registerController = async (req, res) => {
       });
       res.status(201).send({
         success: true,
-        message: "Registeration Success, please login",
+        message: "Registration Success, please login",
         user,
       });
   } catch (error) {
@@ -118,14 +119,11 @@ const loginController = async (req, res) => {
         }
 
           //token
-    const token = user.generateToken();
+          const token = await jwt.sign({_id: user._id},process.env.JWT_SECRET,{
+            expiresIn: "7d",
+          })
     
-        res.status(200).cookie("token", token, {
-            expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-            secure: process.env.DEV_MODE === "development" ? true : false,
-            httpOnly: process.env.DEV_MODE === "development" ? true : false,
-            sameSite: process.env.DEV_MODE === "development" ? true : false,
-          }).send({
+        res.status(200).send({
             success: true,
             message: 'login successfully',
             user: {
@@ -155,7 +153,7 @@ const getUserProfileController = async (req, res) => {
     user.password = undefined;
     res.status(200).send({
       success: true,
-      message: "USer Prfolie Fetched Successfully",
+      message: "USer Profile Fetched Successfully",
       user,
     });
   } catch (error) {
@@ -171,6 +169,23 @@ const getUserProfileController = async (req, res) => {
 const logoutController = async (req, res) => {
   try {
     
+    // const token = req.token
+
+    // if(token) {
+    //   res.clearCookie(token)
+    //   res.status(200).send({
+    //     success: true,
+    //     message: "Logout successfully"
+    //   })
+    // }else {
+    //   res.status(401).send({
+    //     message: "unauthorized user"
+    //   })
+    // }
+    // const user = await userModel.findOne({ email });
+    // const token = await jwt.sign({_id: user._id},process.env.JWT_SECRET,{
+    //   expiresIn: "7d",
+    // })
     res
     .status(200)
     .cookie("token", "", {
@@ -261,7 +276,7 @@ const updateProfilePicController = async (req, res) => {
     // file get from client photo
     const file = getDataUri(req.file);
     // delete prev image
-    await cloudinary.v2.uploader.destroy(user.profilePic.public_id);
+    // await cloudinary.v2.uploader.destroy(user.profilePic.public_id);
     // update
     const cdb = await cloudinary.v2.uploader.upload(file.content);
     user.profilePic = {
@@ -284,6 +299,44 @@ const updateProfilePicController = async (req, res) => {
     });
   }
 }
+
+const passwordResetController = async (req, res) => {
+
+  try {
+    const { email, newPassword, answer } = req.body;
+    // valdiation
+    if (!email || !newPassword || !answer) {
+      return res.status(500).send({
+        success: false,
+        message: "Please Provide All Fields",
+      });
+    }
+    // find user
+    const user = await userModel.findOne({ email, answer });
+    //valdiation
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "invalid user or answer",
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+    res.status(200).send({
+      success: true,
+      message: "Your Password Has Been Reset Please Login !",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error In password reset API",
+      error,
+    });
+
+  }
+}
 module.exports = {
   registerController,
   loginController,
@@ -291,5 +344,6 @@ module.exports = {
   logoutController,
   updateProfileController,
   udpatePasswordController,
-  updateProfilePicController 
+  updateProfilePicController,
+  passwordResetController
 };

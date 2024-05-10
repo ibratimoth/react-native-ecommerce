@@ -7,6 +7,4 @@ const getDataUri = (file) => {
   return parser.format(extName, file.buffer);
 };
 
-module.exports = {
-    getDataUri
-}
+module.exports =  {getDataUri}

@@ -2,11 +2,13 @@ const express = require('express')
 const colors = require('colors')
 const dotenv = require('dotenv')
 const morgan = require('morgan')
-const  connectDB  = require('./config/db')
+const connectDB  = require('./config/db')
 const testRoutes = require('./routes/testRoutes')
 const userRoutes = require('./routes/userRoutes')
 const cookieParser = require('cookie-parser')
 const cloudinary = require('cloudinary')
+const helmet = require('helmet')
+const mongoSanitize = require('express-mongo-sanitize')
 const cors = require('cors')
 
 //configure env
@@ -25,6 +27,8 @@ cloudinary.v2.config({
     api_secret: process.env.CLOUDINARY_SECRET,
 })
 //middlewares
+app.use(helmet())
+app.use(mongoSanitize())
 app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))

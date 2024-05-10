@@ -6,9 +6,15 @@ import {
   TextInput,
   StyleSheet,
   Image,
+  Alert
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InputBox from "../../components/Form/InputBox";
+import axios from 'axios'
+//redux hooks
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../../redux/features/auth/userActions";
+import { useReduxstateHook } from "../../hooks/customeHook";
 
 const Login = ({ navigation }) => {
   const loginImage =
@@ -16,17 +22,57 @@ const Login = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  //login function
-  const handleLogin = () => {
-    if (!email || !password) {
-      return alert("Please enter email or password");
+  //hooks
+//   const dispatch = useDispatch();
+//   //global state
+//   // const { loading, error, message } = useSelector((state) => state.user);
+// const loading = useReduxstateHook(navigation, "home")
+//   //login function
+//   const handleLogin = () => {
+//     if (!email || !password) {
+//       return alert("Please enter email or password");
+//     }
+//     dispatch(login(email, password));
+    // alert("login successfully");
+//     // navigation.navigate("home");
+//   };
+  //life cycle
+  // useEffect(() => {
+  //   if(error){
+  //     alert(error);
+  //     dispatch({type: "clearError"})
+  //   }
+  //   if(message){
+  //     alert(message);
+  //     dispatch({type: "clearMessage"})
+  //     navigation.navigate("home");
+  //   }
+  // }, [error, message, dispatch]);
+
+    const handleSignIn = async () => {
+      try {
+        const res = await axios.post('/api/v1/user/login', { email, password });
+        
+        if (res.data.success) {
+          Alert.alert(res.data.message);
+          // Assuming your API returns some token upon successful login
+          const token = res.data.token;
+          // Navigate to the Home screen
+          navigation.navigate('home', { token });
+        } else {
+          Alert.alert(res.data.error);
+        }
+      } catch (error) {
+        console.error('Network Error:', error);
+        Alert.alert('Network Error', 'An error occurred while connecting to the server. Please try again later.');
+      }
     }
-    alert("login successfully");
-    navigation.navigate("home");
-  };
+    
+  
   return (
     <View style={styles.container}>
       <Image source={{ uri: loginImage }} style={styles.image} />
+      {/* {loading && <Text>loading ...</Text>} */}
       <InputBox
         placeholder={"Enter Your Email"}
         value={email}
@@ -40,7 +86,7 @@ const Login = ({ navigation }) => {
         secureTextEntry={true}
       />
       <View style={styles.btnContainer}>
-        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+        <TouchableOpacity style={styles.loginBtn} onPress={handleSignIn}>
           <Text style={styles.loginBtnText}>Login</Text>
         </TouchableOpacity>
         <Text>

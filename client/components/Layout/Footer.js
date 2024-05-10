@@ -2,11 +2,18 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import React from 'react'
 import AntDesign from "react-native-vector-icons/AntDesign";
 import {useRoute, useNavigation} from '@react-navigation/native'
+import { useReduxstateHook } from '../../hooks/customeHook';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../redux/features/auth/userActions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Footer = () => {
 
   const route = useRoute()
   const navigation = useNavigation()
+  const dispatch = useDispatch()
+
+  const loading = useReduxstateHook(navigation,"login")
   return (
     <View style = {styles.container}>
       <TouchableOpacity style = {styles.menuContainer} onPress={ () => navigation.navigate("home")}>
@@ -25,7 +32,10 @@ const Footer = () => {
       <AntDesign name= 'shoppingcart' style = {[styles.icon, route.name === "cart" && styles.active]}/>
         <Text style = {[styles.iconText, route.name === "cart" && styles.active]}>Cart</Text>
       </TouchableOpacity>
-      <TouchableOpacity style = {styles.menuContainer} onPress={ ()  => {alert("Logout Successfully"), navigation.navigate('login')}}>
+      <TouchableOpacity style = {styles.menuContainer} onPress={async() => {
+        dispatch(logout());
+        await AsyncStorage.removeItem("@auth")
+      }}>
       <AntDesign name= 'logout' style = {styles.icon}/>
         <Text style = {styles.iconText}>Logout</Text>
       </TouchableOpacity>
